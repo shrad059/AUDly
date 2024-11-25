@@ -4,7 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router'; // Import router from expo-router
 import AntDesign from '@expo/vector-icons/AntDesign';
 
-const API_URL = 'http://192.168.2.26:8005/api/music'; // Update with your backend URL
+const API_URL = 'https://audly.onrender.com/api/music'; // Update with your backend URL
 
 const SpotifyTopSongs = () => {
   const [songs, setSongs] = useState([]);

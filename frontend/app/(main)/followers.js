@@ -9,7 +9,7 @@ const Followers = ({ route }) => {
   useEffect(() => {
     const fetchFollowers = async () => {
       try {
-        const response = await axios.get(`http://192.168.2.26:8005/api/users/followers/${username}`);
+        const response = await axios.get(`https://audly.onrender.com/api/users/followers/${username}`);
         setFollowers(response.data);
       } catch (error) {
         console.error('Error fetching followers:', error);

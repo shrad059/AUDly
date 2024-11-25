@@ -5,13 +5,11 @@ import {
   StyleSheet, 
   TextInput, 
   Button, 
-  Image, 
   Alert, 
-  TouchableOpacity, 
+  Image,
   SafeAreaView, 
   ScrollView 
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -37,7 +35,7 @@ export default function EditProfile() {
         return;
       }
 
-      const response = await axios.get(`http://192.168.2.26:8005/api/users/profile/${username}`);
+      const response = await axios.get(`https://audly.onrender.com/api/users/profile/${username}`);
       setEditForm({
         bio: response.data.bio,
         profilePicture: response.data.profilePicture,
@@ -50,42 +48,24 @@ export default function EditProfile() {
     }
   };
 
-  const pickImage = async () => {
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 1,
-      });
-
-      if (!result.canceled) {
-        setEditForm((prev) => ({
-          ...prev,
-          profilePicture: result.assets[0].uri,
-        }));
-
-      }
-    } catch (error) {
-      console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to pick image');
-    }
-  };
-
   const handleUpdateProfile = async () => {
     try {
       const username = await AsyncStorage.getItem('username');
       let profilePictureUrl = editForm.profilePicture;
-      if (typeof profilePictureUrl === 'object') {
-        
-      }
-
-      const response = await axios.put('http://192.168.2.26:8005/api/users/profile/update', {
-        username,
-        ...editForm,
-      });
       
-
+      // If the profile picture is an object (image picked), we should send its URI
+      if (typeof profilePictureUrl === 'object') {
+        profilePictureUrl = profilePictureUrl.uri; // Extract URI from the picked image
+      }
+  
+      const response = await axios.put('https://audly.onrender.com/api/users/profile/update', {
+        username,
+        bio: editForm.bio,
+        profilePicture: profilePictureUrl,
+        name: editForm.name,
+        email: editForm.email,
+      });
+  
       Alert.alert('Success', 'Profile updated successfully');
       router.push('/profile'); // Navigate back to profile screen
     } catch (error) {
@@ -93,16 +73,11 @@ export default function EditProfile() {
       Alert.alert('Error', 'Failed to update profile');
     }
   };
-//   let imageSource = setEditForm.image && typeOf setEditForm.image == 'object' ? user.image.uri :getUserImageSrc(setEditForm.image);
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.header}>Edit Profile</Text>
-
-        <TouchableOpacity style={styles.imagePickerButton} onPress={pickImage}>
-          <Text style={styles.imagePickerButtonText}>Change Profile Picture</Text>
-        </TouchableOpacity>
 
         {editForm.profilePicture && (
           <Image 
@@ -170,17 +145,6 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     height: 100,
     textAlignVertical: 'top',
-  },
-  imagePickerButton: {
-    backgroundColor: '#4CAF50',
-    padding: 12,
-    borderRadius: 5,
-    marginBottom: 15,
-    alignItems: 'center',
-  },
-  imagePickerButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
   },
   previewImage: {
     width: 100,

@@ -39,7 +39,7 @@ export default function PostMusic() {
       // Log the comment and username
       // console.log('Username:', username);
       console.log('data:', data);
-      const response = await fetch('http://192.168.2.26:8005/api/music/addSong', {
+      const response = await fetch('https://audly.onrender.com/api/music/addSong', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

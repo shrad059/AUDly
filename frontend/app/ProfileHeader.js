@@ -1,11 +1,12 @@
 // ProfileHeader.js
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { Image } from 'react-native';
 
 const ProfileHeader = ({ userProfile }) => {
   return (
     <View style={styles.profileHeader}>
-    <img source={{ uri: userProfile.profilePicture }} style={styles.profilePicture} />
+    <Image source={{ uri: userProfile.profilePicture }} style={styles.profilePicture} />
     
 
       <Text style={styles.username}>@{userProfile.username}</Text>

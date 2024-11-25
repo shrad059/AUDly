@@ -42,11 +42,11 @@ export default function UserProfile() {
     if (userUsername) {
       const fetchProfile = async () => {
         try {
-          const response = await axios.get(`http://192.168.2.26:8005/api/users/profile/${username}`);
+          const response = await axios.get(`https://audly.onrender.com/api/users/profile/${username}`);
           setUserProfile(response.data);
           setIsFollowing(response.data.followers.includes(userUsername));
 
-          const songsResponse = await axios.get(`http://192.168.2.26:8005/api/music/getSongs?username=${username}`);
+          const songsResponse = await axios.get(`https://audly.onrender.com/api/music/getSongs?username=${username}`);
           setPostedSongs(songsResponse.data);
         } catch (error) {
           Alert.alert('Error', 'Failed to load profile.');
@@ -61,8 +61,8 @@ export default function UserProfile() {
   const handleFollowToggle = async () => {
     try {
       const endpoint = isFollowing
-        ? `http://192.168.2.26:8005/api/users/unfollow/${username}`
-        : `http://192.168.2.26:8005/api/users/follow/${username}`;
+        ? `https://audly.onrender.com/api/users/unfollow/${username}`
+        : `https://audly.onrender.com/api/users/follow/${username}`;
       const response = await axios.post(endpoint, { currentUsername: userUsername });
       if (response.status === 200) {
         setIsFollowing(!isFollowing);

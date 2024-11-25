@@ -2,10 +2,10 @@ import axios from 'axios';
 
 // Environment-based base URL
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL || 'http://192.168.2.26:8005', // Use environment variable for base URL
+  baseURL: process.env.REACT_APP_API_BASE_URL || 'https://audly.onrender.com/', // Use environment variable for base URL
   // baseURL: process.env.REACT_APP_API_BASE_URL || 'http://10.0.2.2:8005', // Use environment variable for base URL
 
-  timeout: 5000,
+  timeout: 10000,
 });
 
 // Register a user

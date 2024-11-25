@@ -7,7 +7,12 @@ export default function App() {
     <View className="flex-1 items-center justify-center bg-white">
       <Text className="text-3xl font-pblack">Aora!</Text>
       <StatusBar style="auto" />
-      <Link href="/login" style={{ color: 'blue' }}>Go to Profile</Link>
+      <Link 
+        href="/login" 
+        style={{ color: 'blue', textAlign: 'center', marginTop: 30 }}
+      >
+        Go to Profile
+      </Link>
     </View>
   );
 }

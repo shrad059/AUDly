@@ -45,7 +45,7 @@ export default function Profile() {
         return;
       }
 
-      const response = await axios.get(`http://192.168.2.26:8005/api/users/profile/${username}`);
+      const response = await axios.get(`https://audly.onrender.com/api/users/profile/${username}`);
       setUserProfile(response.data);
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -56,7 +56,7 @@ export default function Profile() {
   const fetchPostedSongs = async () => {
     try {
       const username = id || await AsyncStorage.getItem('username');
-      const response = await axios.get(`http://192.168.2.26:8005/api/music/getSongs?username=${username}`);
+      const response = await axios.get(`https://audly.onrender.com/api/music/getSongs?username=${username}`);
       setPostedSongs(response.data);
     } catch (error) {
       console.error('Error fetching songs:', error);
