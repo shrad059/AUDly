@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   View, 
   Text, 
@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+// import { Audio } from 'expo-av';  // Import the Audio component from expo-av
 
 export default function PostMusic() {
   const router = useRouter();
@@ -17,28 +18,86 @@ export default function PostMusic() {
   const { songName, artist, albumArt, spotifyLink } = params;
   
   const [comment, setComment] = useState("");
+  const [sound, setSound] = useState();  // To hold the Audio sound object
+  const [previewUrl, setPreviewUrl] = useState("");  // To hold the Deezer preview URL
+  const [isPlaying, setIsPlaying] = useState(false);
+
+
+  // Fetch Deezer song data and preview URL
+  const getDeezerSongData = async () => {
+    try {
+      const response = await fetch(`https://audly.onrender.com/api/music/deezer/search?query=${songName}`);
+      const data = await response.json();
+      if (data && data.data && data.data.length > 0) {
+        const deezerSong = data.data[0];
+        setPreviewUrl(deezerSong.preview);  // Set the preview URL from Deezer response
+      } else {
+        Alert.alert('No results', 'No songs found on Deezer.');
+      }
+    } catch (error) {
+      console.error('Deezer fetch error:', error);
+      Alert.alert('Error', 'Something went wrong while fetching from Deezer.');
+    }
+  };
+
+  useEffect(() => {
+    // Fetch Deezer song data when the component mounts
+    getDeezerSongData();
+  }, []);
+
+  // Function to play the preview
+  // const playPreview = async () => {
+  //   if (sound) {
+  //     await sound.playAsync();
+  //     setIsPlaying(true);
+  //     return;
+  //   }
+  //   try {
+  //     const { sound: newSound } = await Audio.Sound.createAsync(
+  //       { uri: previewUrl },
+  //       { shouldPlay: true }
+  //     );
+  //     setSound(newSound);
+  //     setIsPlaying(true);
+  //   } catch (error) {
+  //     console.error("Error playing sound:", error);
+  //     Alert.alert("Error", "Failed to play preview.");
+  //   }
+  // };
+
+  const pausePreview = async () => {
+    if (sound) {
+      await sound.pauseAsync();
+      setIsPlaying(false);
+    }
+  };
+  useEffect(() => {
+    return sound ? () => {
+      sound.unloadAsync();
+    } : undefined;
+  }, [sound]);
 
   // Make the function async to use `await`
   const handlePostComment = async () => {
     try {
       const username = await AsyncStorage.getItem('username');
-    
       if (!username) {
         Alert.alert('Error', 'No username found. Please log in again.');
         return;
       }
+
       const data = {
-        username:username,
-        songName:songName,
-        artist:artist,
-        albumArt:albumArt,
-        spotifyLink:spotifyLink,
-        comment:comment,  // Add the comment
+        username: username,
+        songName: songName,
+        artist: artist,
+        albumArt: albumArt,
+        spotifyLink: spotifyLink,
+        comment: comment,  // Add the comment
+        deezerSongLink: previewUrl,  // Deezer link if available
       };
-    
-      // Log the comment and username
-      // console.log('Username:', username);
+
       console.log('data:', data);
+
       const response = await fetch('https://audly.onrender.com/api/music/addSong', {
         method: 'POST',
         headers: {
@@ -46,6 +105,7 @@ export default function PostMusic() {
         },
         body: JSON.stringify(data),
       });
+
       if (!response.ok) {
         throw new Error('Failed to add song');
       }
@@ -54,10 +114,9 @@ export default function PostMusic() {
       console.log(result.message);
       router.push('/profile'); 
 
-      // Example: Post the data (replace with your actual API call)
       Alert.alert('Success', 'Your comment has been posted!');
     } catch (error) {
-      console.error('An error occurred while retrieving the username:', error);
+      console.error('An error occurred while posting comment:', error);
       Alert.alert('Error', 'Something went wrong. Please try again later.');
     }
   };
@@ -78,6 +137,16 @@ export default function PostMusic() {
           <Text style={styles.spotifyLink}>Listen on Spotify</Text>
         </TouchableOpacity>
       </View>
+
+      {/* {previewUrl ? (
+        <View style={styles.playerContainer}>
+          <TouchableOpacity onPress={isPlaying ? pausePreview : playPreview} style={styles.playButton}>
+            <Text style={styles.playButtonText}>{isPlaying ? "Pause" : "Play"} Preview</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <Text>Loading preview...</Text>
+      )} */}
 
       {/* Comment Section */}
       <View style={styles.commentSection}>
@@ -139,6 +208,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#1DB954", // Spotify green color
     textDecorationLine: "underline",
+  },
+  playerContainer: {
+    marginTop: 20,
+    alignItems: "center",
+  },
+  playButton: {
+    backgroundColor: "#1E90FF",
+    padding: 10,
+    borderRadius: 5,
+  },
+  playButtonText: {
+    color: "#fff",
+    fontSize: 16,
   },
   commentSection: {
     marginTop: 40,

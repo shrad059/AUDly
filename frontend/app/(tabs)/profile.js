@@ -44,7 +44,7 @@ export default function Profile() {
         Alert.alert('Error', 'Please log in again');
         return;
       }
-
+      // const response = await axios.get(`http://localhost:8006/api/users/profile/${username}`);
       const response = await axios.get(`https://audly.onrender.com/api/users/profile/${username}`);
       setUserProfile(response.data);
     } catch (error) {
@@ -56,6 +56,7 @@ export default function Profile() {
   const fetchPostedSongs = async () => {
     try {
       const username = id || await AsyncStorage.getItem('username');
+      // const response = await axios.get(`http://localhost:8006/api/music/getSongs?username=${username}`);
       const response = await axios.get(`https://audly.onrender.com/api/music/getSongs?username=${username}`);
       setPostedSongs(response.data);
     } catch (error) {
@@ -64,8 +65,8 @@ export default function Profile() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={styles.container}>
+<SafeAreaView style={{ flex: 1, backgroundColor: '#121212' }}>
+  <ScrollView contentContainerStyle={styles.container} style={{ backgroundColor: '#121212' }}>
         <View style={styles.header}>
           <Text style={styles.username}>@{userProfile.username}</Text>
           {id !== userProfile.username && (
@@ -84,11 +85,10 @@ export default function Profile() {
           </TouchableOpacity>
         </View>
 
-        {/* Profile Info Section */}
         <View style={styles.profileInfo}>
           <View style={styles.textContainer}>
-            <Text style={styles.name}>{userProfile.name}</Text>
-            <Text style={styles.bio}>{userProfile.bio}</Text>
+          <Text style={styles.name}>{userProfile.name || 'Name'}</Text>
+          <Text style={styles.bio}>{userProfile.bio}</Text>
             <View style={styles.stats}>
               <Text style={styles.statsText}>{userProfile.followersCount} Followers</Text>
               <Text style={styles.statsText}>{userProfile.followingCount} Following</Text>
@@ -103,6 +103,7 @@ export default function Profile() {
         {/* Posted Songs Section */}
         <View style={styles.songsContainer}>
           <Text style={styles.sectionTitle}>Posted Songs</Text>
+          {/* Looks so lonely here... */}
           {postedSongs.map((song, index) => (
             <View key={index} style={styles.songCard}>
               <View style={styles.userInfo}>
@@ -137,8 +138,8 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 16,
-    backgroundColor: '#121212', // Dark background
-    color: '#ccc', // Light text color for contrast
+    backgroundColor: '#121212', 
+    color: '#ccc', 
   },
   header: {
     flexDirection: 'row',
@@ -150,7 +151,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     margin: 'auto',
     fontWeight: 'bold',
-    color: '#fff', // White text for username
+    color: '#fff', 
     flex: 1,
     textAlign: 'center',
   },
@@ -173,11 +174,11 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontWeight: 'bold',
     fontFamily: 'GeistMono_400Regular',
-    color: '#fff', // White text for name
+    color: '#fff', 
   },
   bio: {
     fontSize: 16,
-    color: '#bbb', // Lighter color for bio text
+    color: '#bbb',
     marginBottom: 10,
   },
   profilePicture: {
@@ -185,7 +186,7 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     borderWidth: 1,
-    borderColor: '#fff', // White border around profile picture
+    borderColor: '#fff',
   },
   songsContainer: {
     marginTop: 30,
@@ -198,7 +199,7 @@ const styles = StyleSheet.create({
   statsText: {
     paddingHorizontal: 1,
     fontSize: 13,
-    color: '#bbb', // Lighter text for stats
+    color: '#bbb',
   },
   sectionTitle: {
     fontSize: 22,

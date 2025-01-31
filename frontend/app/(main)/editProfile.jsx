@@ -8,8 +8,10 @@ import {
   Alert, 
   Image,
   SafeAreaView, 
-  ScrollView 
+  ScrollView, 
+  TouchableOpacity 
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -48,26 +50,41 @@ export default function EditProfile() {
     }
   };
 
+  const selectPhoto = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Denied', 'We need access to your photos.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setEditForm((prev) => ({ ...prev, profilePicture: result.assets[0].uri }));
+    }
+  };
+
   const handleUpdateProfile = async () => {
     try {
       const username = await AsyncStorage.getItem('username');
       let profilePictureUrl = editForm.profilePicture;
-      
-      // If the profile picture is an object (image picked), we should send its URI
-      if (typeof profilePictureUrl === 'object') {
-        profilePictureUrl = profilePictureUrl.uri; // Extract URI from the picked image
-      }
-  
+
+      // If using an API that requires file uploads, handle it here
       const response = await axios.put('https://audly.onrender.com/api/users/profile/update', {
         username,
         bio: editForm.bio,
-        profilePicture: profilePictureUrl,
+        profilePicture: profilePictureUrl, // Make sure your backend can handle this URL
         name: editForm.name,
         email: editForm.email,
       });
-  
+
       Alert.alert('Success', 'Profile updated successfully');
-      router.push('/profile'); // Navigate back to profile screen
+      router.push('/profile');
     } catch (error) {
       console.error('Error updating profile:', error);
       Alert.alert('Error', 'Failed to update profile');
@@ -79,12 +96,14 @@ export default function EditProfile() {
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.header}>Edit Profile</Text>
 
-        {editForm.profilePicture && (
+        {/* Profile Picture with Click-to-Change Feature */}
+        <TouchableOpacity onPress={selectPhoto}>
           <Image 
-            source={{ uri: editForm.profilePicture }} 
-            style={styles.previewImage} 
+            source={{ uri: editForm.profilePicture || 'https://via.placeholder.com/100' }} 
+            style={styles.profileImage} 
           />
-        )}
+        </TouchableOpacity>
+        <Text style={styles.changeText}>Tap to change profile picture</Text>
 
         <TextInput
           style={styles.input}
@@ -123,6 +142,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: 16,
     backgroundColor: 'white',
+    alignItems: 'center',
   },
   header: {
     fontSize: 24,
@@ -130,7 +150,22 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 20,
   },
+  profileImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    alignSelf: 'center',
+    marginBottom: 10,
+    borderWidth: 2,
+    borderColor: '#ddd',
+  },
+  changeText: {
+    fontSize: 14,
+    color: 'gray',
+    marginBottom: 20,
+  },
   input: {
+    width: '100%',
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 5,
@@ -138,6 +173,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   bioInput: {
+    width: '100%',
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 5,
@@ -146,16 +182,10 @@ const styles = StyleSheet.create({
     height: 100,
     textAlignVertical: 'top',
   },
-  previewImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    alignSelf: 'center',
-    marginBottom: 15,
-  },
   buttons: {
     flexDirection: 'row',
     justifyContent: 'space-around',
+    width: '100%',
     marginTop: 20,
   },
 });

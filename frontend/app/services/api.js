@@ -3,7 +3,7 @@ import axios from 'axios';
 // Environment-based base URL
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_BASE_URL || 'https://audly.onrender.com/', // Use environment variable for base URL
-  // baseURL: process.env.REACT_APP_API_BASE_URL || 'http://10.0.2.2:8005', // Use environment variable for base URL
+  // baseURL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:8006/', // Use environment variable for base URL
 
   timeout: 10000,
 });
@@ -12,7 +12,7 @@ const api = axios.create({
 export const registerUser = async (username, email, password) => {
   try {
     const response = await api.post('/api/auth/register', { username, email, password });
-    return response.data;  // Assuming response has the data directly
+    return response.data; 
   } catch (error) {
     console.error('Error during registration:', error);
     throw error;

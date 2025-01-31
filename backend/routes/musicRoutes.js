@@ -6,21 +6,19 @@ const User = require('../models/User');
 
 const router = express.Router();
 
-// Your Spotify credentials
-const CLIENT_ID = '483b7d8a51194faabfb6aed8f4565b4e';
-const CLIENT_SECRET = '69319174700446e6a44b6978528b8332';
-
+const CLIENT_ID = process.env.CLIENT_ID;
+const CLIENT_SECRET = process.env.CLIENT_SECRET;
+console.log(CLIENT_ID)
 let accessToken = null;
 let tokenExpiration = null;
 
-// Get Spotify access token
+const DEEZER_API_URL = 'https://api.deezer.com';
+
 async function getSpotifyToken() {
-    // Check if we have a valid token
-    if (accessToken && tokenExpiration && Date.now() < tokenExpiration) {
+  if (accessToken && tokenExpiration && Date.now() < tokenExpiration) {
         return accessToken;
     }
 
-    // Get new token
     const response = await fetch('https://accounts.spotify.com/api/token', {
         method: 'POST',
         headers: {
@@ -32,15 +30,49 @@ async function getSpotifyToken() {
 
     const data = await response.json();
     accessToken = data.access_token;
-    console.log(accessToken);
-    // Token expires in 3600 seconds, we'll set expiration a bit earlier to be safe
     tokenExpiration = Date.now() + (data.expires_in - 60) * 1000;
     return accessToken;
 }
 
+router.get('/deezer/search', async (req, res) => {
+  try {
+    const { query } = req.query;
+    if (!query) {
+      return res.status(400).json({ error: 'Search query is required' });
+    }
+
+    // Search for tracks using Deezer API
+    const response = await fetch(`${DEEZER_API_URL}/search?q=${encodeURIComponent(query)}&limit=10`);
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Deezer playlist route (similar to Spotify's playlist fetch)
+router.get('/deezer/playlist/:id', async (req, res) => {
+  try {
+    const response = await fetch(`${DEEZER_API_URL}/playlist/${req.params.id}`);
+    const data = await response.json();
+
+    if (data && data.tracks && data.tracks.data) {
+      const topSongs = data.tracks.data.slice(0, 10);  // Get top 10 songs
+      res.json({ tracks: { items: topSongs } });
+    } else {
+      res.status(500).json({ error: 'Invalid data structure from Deezer API' });
+    }
+  } catch (error) {
+    console.error('Error fetching Deezer playlist:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
 router.get('/getSpotifyToken', async (req, res) => {
   try {
-      const token = await getSpotifyToken(); // Your function to get the token
+      const token = await getSpotifyToken(); 
       res.json({ access_token: token });
   } catch (error) {
       res.status(500).json({ message: 'Failed to fetch token' });
@@ -70,26 +102,33 @@ router.get('/search', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-// Endpoint to get playlist
 router.get('/playlist/:id', async (req, res) => {
-    try {
-        const token = await getSpotifyToken();
-        const response = await fetch(
-            `https://api.spotify.com/v1/playlists/${req.params.id}`,
-            {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            }
-        );
-        
-        const data = await response.json();
-        res.json(data);
-    } catch (error) {
-        console.error('Error:', error);
-        res.status(500).json({ error: error.message });
+  try {
+    const token = await getSpotifyToken();
+    console.log("token "+token);
+    const response = await fetch(
+      `https://api.spotify.com/v1/playlists/${req.params.id}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      }
+    );
+    const data = await response.json();
+
+    if (data && data.tracks && data.tracks.items) {
+      // Ensure tracks.items exists and is not empty
+      const topSongs = data.tracks.items.slice(0, 10);  // Get top 10 songs
+      res.json({ tracks: { items: topSongs } });
+    } else {
+      res.status(500).json({ error: 'Invalid data structure from Spotify API' });
     }
+  } catch (error) {
+    console.error('Error fetching playlist:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
+
 // router.post('/addSong', async (req, res) => {
 //   const { username, songName, artist, albumArt, spotifyLink } = req.body;
 
@@ -158,8 +197,8 @@ router.get('/getSongs', async (req, res) => {
 
     res.status(200).json(songs); // Send the list of songs back to the client
   } catch (error) {
-    console.error('Error fetching songs:', error);
-    res.status(500).json({ message: 'Error fetching songs', error: error.message });
+    console.error('Error fetching songs1:', error);
+    res.status(500).json({ message: 'Error fetching songs2', error: error.message });
   }
 });
 // Get all songs posted by any user
@@ -168,8 +207,8 @@ router.get('/getAllSongs', async (req, res) => {
     const songs = await Song.find(); // Fetch all songs from the database
     res.status(200).json(songs); // Return songs as JSON
   } catch (err) {
-    console.error('Error fetching songs:', err);
-    res.status(500).json({ message: 'Error fetching songs' });
+    console.error('Error fetching songs3:', err);
+    res.status(500).json({ message: 'Error fetching songs4' });
   }
 });
 

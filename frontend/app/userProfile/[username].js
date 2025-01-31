@@ -42,9 +42,12 @@ export default function UserProfile() {
     if (userUsername) {
       const fetchProfile = async () => {
         try {
+          // const response = await axios.get(`http://localhost:8006/api/users/profile/${username}`);
           const response = await axios.get(`https://audly.onrender.com/api/users/profile/${username}`);
           setUserProfile(response.data);
           setIsFollowing(response.data.followers.includes(userUsername));
+
+          // const songsResponse = await axios.get(`http://localhost:8006//api/music/getSongs?username=${username}`);
 
           const songsResponse = await axios.get(`https://audly.onrender.com/api/music/getSongs?username=${username}`);
           setPostedSongs(songsResponse.data);
@@ -61,6 +64,9 @@ export default function UserProfile() {
   const handleFollowToggle = async () => {
     try {
       const endpoint = isFollowing
+      
+      // ? `http://localhost:8006/api/users/unfollow/${username}`
+      // : `http://localhost:8006/api/users/follow/${username}`;
         ? `https://audly.onrender.com/api/users/unfollow/${username}`
         : `https://audly.onrender.com/api/users/follow/${username}`;
       const response = await axios.post(endpoint, { currentUsername: userUsername });
@@ -108,7 +114,7 @@ export default function UserProfile() {
           <Text style={styles.bio}>{userProfile.bio}</Text>
           <View style={styles.stats}>
             <Text style={styles.statText}>
-              {userProfile.followersCount} Followers
+              {userProfile.followersCount} Follower
             </Text>
             <Text style={styles.statText}>
               {userProfile.followingCount} Following

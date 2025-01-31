@@ -1,7 +1,21 @@
-import React from 'react';
-import { View, Text, Image, Linking, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Image, Linking, TouchableOpacity, StyleSheet } from 'react-native';
+import { Audio } from 'expo-av';
 
 const PostedSongs = ({ songs }) => {
+  const [sound, setSound] = useState(null);
+
+  const playPreview = async (previewUrl) => {
+    if (sound) {
+      await sound.unloadAsync();
+    }
+    const { sound: newSound } = await Audio.Sound.createAsync(
+      { uri: previewUrl },
+      { shouldPlay: true }
+    );
+    setSound(newSound);
+  };
+
   if (!songs || songs.length === 0) {
     return <Text>No songs available</Text>;
   }
@@ -19,8 +33,15 @@ const PostedSongs = ({ songs }) => {
             <Text
               style={styles.spotifyLink}
               onPress={() => Linking.openURL(song.spotifyLink)}>
-              Listen on Spotify
+              Listenn on Spotify
             </Text>
+          )}
+          {song.previewUrl && (
+            <TouchableOpacity
+              style={styles.playButton}
+              onPress={() => playPreview(song.previewUrl)}>
+              <Text style={styles.playButtonText}>Play Preview</Text>
+            </TouchableOpacity>
           )}
         </View>
       ))}
@@ -52,6 +73,17 @@ const styles = StyleSheet.create({
   spotifyLink: {
     color: 'blue',
     marginTop: 5,
+  },
+  playButton: {
+    backgroundColor: '#1E90FF',
+    padding: 8,
+    borderRadius: 5,
+    marginTop: 5,
+    alignItems: 'center',
+  },
+  playButtonText: {
+    color: '#fff',
+    fontSize: 14,
   },
 });
 

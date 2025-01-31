@@ -23,6 +23,7 @@ const Following = () => {
 
     const fetchSongs = async () => {
       try {
+        // const response = await axios.get('http://localhost/:8006/api/music/getAllSongs');
         const response = await axios.get('https://audly.onrender.com/api/music/getAllSongs');
         const filteredSongs = response.data.filter(song => song.username !== userUsername);
         setSongs(filteredSongs);

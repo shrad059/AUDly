@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Text, TextInput, Button, View, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { registerUser } from '../services/api.js'; // Import the registerUser function
+import { registerUser } from '../services/api.js';
 
 const Register = () => {
   const router = useRouter();
@@ -9,17 +9,25 @@ const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  // Handle the registration
   const handleRegister = async () => {
     if (!username || !email || !password) {
       Alert.alert("Error", "Please fill all fields");
       return;
     }
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+    if (!passwordRegex.test(password)) {
+      Alert.alert(
+        "Invalid Password",
+        "Password must be at least 8 characters long, contain one uppercase letter, one lowercase letter, one number, and one special character."
+      );
+      return;
+    }  
 
     try {
-      await registerUser(username, email, password); // Call the registerUser function
+      await registerUser(username, email, password); 
       Alert.alert('Registration Successful!', 'You can now log in.');
-      router.push('/login'); // Navigate to login page after successful registration
+      router.push('/login'); 
     } catch (error) {
       Alert.alert('Error', 'Registration failed. Please try again.');
     }
@@ -29,7 +37,6 @@ const Register = () => {
     <View style={styles.container}>
       <Text style={styles.title}>Register</Text>
 
-      {/* Username input */}
       <TextInput
         style={styles.input}
         placeholder="Username"
@@ -37,7 +44,6 @@ const Register = () => {
         onChangeText={setUsername}
       />
 
-      {/* Email input */}
       <TextInput
         style={styles.input}
         placeholder="Email"
@@ -46,7 +52,6 @@ const Register = () => {
         keyboardType="email-address"
       />
 
-      {/* Password input */}
       <TextInput
         style={styles.input}
         placeholder="Password"
@@ -57,7 +62,6 @@ const Register = () => {
 
       <Button title="Register" onPress={handleRegister} />
 
-      {/* Button to navigate to the Login screen */}
       <Button title="Already have an account? Login" onPress={() => router.push('/login')} />
     </View>
   );

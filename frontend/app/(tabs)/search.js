@@ -16,6 +16,7 @@ const Search = () => {
     }
 
     try {
+      // const response = await axios.get(`http://localhost:8006/api/users/profile/${username}`);
       const response = await axios.get(`https://audly.onrender.com/api/users/profile/${username}`);
       console.log(response);
       setSearchedUser(response.data);

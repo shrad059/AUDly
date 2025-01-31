@@ -1,13 +1,21 @@
 import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';  
+import AntDesign from '@expo/vector-icons/AntDesign';
 
 const Settings = () => {
     const router = useRouter();
   return (
     <ScrollView style={styles.container}>
+    <View style={styles.header}>
+      <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <AntDesign name="left" size={24} color="black" />
+      </TouchableOpacity>
       <Text style={styles.title}>Settings</Text>
-      
+    </View>
+
+
+
       {/* Notification Option */}
       <TouchableOpacity style={styles.option}>
         <Text style={styles.optionText}>Notifications</Text>
