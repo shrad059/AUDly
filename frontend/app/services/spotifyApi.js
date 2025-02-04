@@ -1,4 +1,3 @@
-// services/spotifyApi.js
 import axios from 'axios';
 
 export async function getTopSongs(accessToken) {

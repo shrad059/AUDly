@@ -10,7 +10,6 @@ import {
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-// import { Audio } from 'expo-av';  // Import the Audio component from expo-av
 
 export default function PostMusic() {
   const router = useRouter();
@@ -18,19 +17,18 @@ export default function PostMusic() {
   const { songName, artist, albumArt, spotifyLink } = params;
   
   const [comment, setComment] = useState("");
-  const [sound, setSound] = useState();  // To hold the Audio sound object
-  const [previewUrl, setPreviewUrl] = useState("");  // To hold the Deezer preview URL
+  const [sound, setSound] = useState(); 
+  const [previewUrl, setPreviewUrl] = useState(""); 
   const [isPlaying, setIsPlaying] = useState(false);
 
 
-  // Fetch Deezer song data and preview URL
   const getDeezerSongData = async () => {
     try {
-      const response = await fetch(`https://audly.onrender.com/api/music/deezer/search?query=${songName}`);
+      const response = await fetch(`http://localhost:8006/api/music/deezer/search?query=${songName}`);
       const data = await response.json();
       if (data && data.data && data.data.length > 0) {
         const deezerSong = data.data[0];
-        setPreviewUrl(deezerSong.preview);  // Set the preview URL from Deezer response
+        setPreviewUrl(deezerSong.preview); 
       } else {
         Alert.alert('No results', 'No songs found on Deezer.');
       }
@@ -41,11 +39,9 @@ export default function PostMusic() {
   };
 
   useEffect(() => {
-    // Fetch Deezer song data when the component mounts
     getDeezerSongData();
   }, []);
 
-  // Function to play the preview
   // const playPreview = async () => {
   //   if (sound) {
   //     await sound.playAsync();
@@ -77,7 +73,6 @@ export default function PostMusic() {
     } : undefined;
   }, [sound]);
 
-  // Make the function async to use `await`
   const handlePostComment = async () => {
     try {
       const username = await AsyncStorage.getItem('username');
@@ -92,13 +87,13 @@ export default function PostMusic() {
         artist: artist,
         albumArt: albumArt,
         spotifyLink: spotifyLink,
-        comment: comment,  // Add the comment
-        deezerSongLink: previewUrl,  // Deezer link if available
+        comment: comment, 
+        deezerSongLink: previewUrl,  
       };
 
       console.log('data:', data);
 
-      const response = await fetch('https://audly.onrender.com/api/music/addSong', {
+      const response = await fetch('http://localhost:8006/api/music/addSong', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -123,12 +118,10 @@ export default function PostMusic() {
 
   return (
     <View style={styles.container}>
-      {/* Back button */}
       <TouchableOpacity onPress={() => router.push("/discover")} style={styles.backButton}>
         <Text style={styles.backText}>{"< Discover"}</Text>
       </TouchableOpacity>
 
-      {/* Music Information */}
       <View style={styles.musicInfo}>
         <Image source={{ uri: albumArt }} style={styles.albumArt} />
         <Text style={styles.songTitle}>{songName}</Text>
@@ -148,7 +141,6 @@ export default function PostMusic() {
         <Text>Loading preview...</Text>
       )} */}
 
-      {/* Comment Section */}
       <View style={styles.commentSection}>
         <Text style={styles.commentLabel}>Add a description or comment:</Text>
         <TextInput
@@ -160,7 +152,6 @@ export default function PostMusic() {
         />
       </View>
 
-      {/* Post Button */}
       <TouchableOpacity onPress={handlePostComment} style={styles.postButton}>
         <Text style={styles.postButtonText}>POST</Text>
       </TouchableOpacity>
@@ -206,7 +197,7 @@ const styles = StyleSheet.create({
   },
   spotifyLink: {
     fontSize: 16,
-    color: "#1DB954", // Spotify green color
+    color: "#1DB954",  
     textDecorationLine: "underline",
   },
   playerContainer: {

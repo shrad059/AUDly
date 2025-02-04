@@ -4,6 +4,7 @@ import { Tabs } from 'expo-router';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import Fontisto from '@expo/vector-icons/Fontisto';
+import { FontAwesome } from '@expo/vector-icons';
 
 const TabsLayout = () => {
   return (
@@ -22,8 +23,7 @@ const TabsLayout = () => {
             title: '',
             headerShown: false,
             tabBarIcon: ({ focused }) => (
-              // <FontAwesome6 name="compact-disc" size={24} color={focused ? '#e0e0e0' : '#bbb'} />
-              <Fontisto name="applemusic" size={24} color={focused ? '#e0e0e0' : '#bbb'} />
+              <FontAwesome6 name="compact-disc" size={24} color={focused ? '#e0e0e0' : '#bbb'} />
             ),
           }}
         />
@@ -33,7 +33,7 @@ const TabsLayout = () => {
             title: '',
             headerShown: false,
             tabBarIcon: ({ focused }) => (
-              <FontAwesome6 name="compact-disc" size={24} color={focused ? '#e0e0e0' : '#bbb'} />
+              <FontAwesome6 name="magnifying-glass" size={24} color={focused ? '#e0e0e0' : '#bbb'} />
             ),
           }}
         />
@@ -43,7 +43,7 @@ const TabsLayout = () => {
             title: '',
             headerShown: false,
             tabBarIcon: ({ focused }) => (
-              <FontAwesome6 name="magnifying-glass" size={24} color={focused ? '#e0e0e0' : '#bbb'} />
+              <FontAwesome name="inbox" size={28} color={focused ? '#e0e0e0' : '#bbb'} />
             ),
           }}
         />

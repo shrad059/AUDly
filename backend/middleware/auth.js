@@ -4,7 +4,7 @@ console.log('hi')
 
 const authMiddleware = (req, res, next) => {
     console.log('hi2')
-  const token = req.header('Authorization')?.replace('Bearer ', '');  // Extract the token from the Authorization header
+  const token = req.header('Authorization')?.replace('Bearer ', ''); 
 
   if (!token) {
     console.log('No token provided');
@@ -12,8 +12,8 @@ const authMiddleware = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);  // Validate the token using the secret
-    req.user = decoded.user;  // Attach user info to the request object
+    const decoded = jwt.verify(token, process.env.JWT_SECRET); 
+    req.user = decoded.user; 
     next();
   } catch (err) {
     console.log('Token verification failed:', err);

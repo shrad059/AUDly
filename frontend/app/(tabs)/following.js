@@ -1,13 +1,40 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
+import { GestureHandlerRootView, PanGestureHandler } from 'react-native-gesture-handler';
+import PaginatedSongs from '../(main)/PaginatedSongs';
 
 const Following = () => {
-  const [songs, setSongs] = useState([]);
+  const [allSongs, setAllSongs] = useState([]);
+  const [filteredSongs, setFilteredSongs] = useState([]);
   const [userUsername, setUserUsername] = useState('');
-  const router = useRouter();  // Get router from expo-router
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followedUsers, setFollowedUsers] = useState([]);
+  const [likedSongs, setLikedSongs] = useState({});
+
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchLikedSongs = async () => {
+      if (!userUsername) return;
+
+      try {
+        const response = await axios.get(`http://localhost:8006/api/users/${userUsername}/likedSongs`);
+        const likedSongIds = response.data;
+        console.log("🔥 Liked Songs from API:", likedSongIds);
+        setLikedSongs(new Set(likedSongIds));
+      } catch (error) {
+        console.error("❌ Error fetching liked songs:", error);
+        setLikedSongs(new Set());
+      }
+    };
+
+    fetchLikedSongs();
+  }, [userUsername]);
 
   useEffect(() => {
     const fetchUsername = async () => {
@@ -15,150 +42,159 @@ const Following = () => {
         const username = await AsyncStorage.getItem('username');
         if (username) {
           setUserUsername(username);
+        } else {
+          setError('Please log in again');
         }
       } catch (error) {
-        console.error('Error getting username from AsyncStorage:', error);
-      }
-    };
-
-    const fetchSongs = async () => {
-      try {
-        // const response = await axios.get('http://localhost/:8006/api/music/getAllSongs');
-        const response = await axios.get('https://audly.onrender.com/api/music/getAllSongs');
-        const filteredSongs = response.data.filter(song => song.username !== userUsername);
-        setSongs(filteredSongs);
-      } catch (error) {
-        console.error('Error fetching songs:', error);
+        setError('Failed to load user data');
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchUsername();
-    fetchSongs();
+  }, []);
+
+  useEffect(() => {
+    const fetchFollowedUsers = async () => {
+      try {
+        if (!userUsername) return;
+        const response = await axios.get(`http://localhost:8006/api/users/following/${userUsername}`);
+        console.log("Followed users from API:", response.data);
+        setFollowedUsers(response.data);
+      } catch (error) {
+        console.error("Failed to load followed users:", error);
+        setError('Failed to load followed users');
+        setFollowedUsers([]);
+      }
+    };
+
+    fetchFollowedUsers();
   }, [userUsername]);
 
+  useEffect(() => {
+    const fetchSongs = async () => {
+      try {
+        const response = await axios.get('http://localhost:8006/api/music/getAllSongs');
+        console.log("All Songs:", response.data);
+        setAllSongs(response.data);
+  
+        console.log("Followed Userrrs:", followedUsers);
+  
+        if (followedUsers.length > 0) {
+          const followedUsernames = followedUsers.map(user => user.username);
+          const filtered = response.data.filter(song =>
+            followedUsers.includes(song.username)
+          );
+
+          console.log("Followed Usernames:", followedUsernames);
+
+          console.log("Filtered Songs:", filtered);
+          setFilteredSongs(filtered);
+        } else {
+          console.log("No followed users, showing all songs");
+          // setFilteredSongs(response.data);
+        }
+      } catch (error) {
+        console.error("Failed to load songs:", error);
+        setError('Failed to load songs');
+        setAllSongs([]);
+        setFilteredSongs([]);
+      }
+    };
+  
+    fetchSongs();
+  }, [followedUsers]);
+
+  if (isLoading || !userUsername || error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{error || 'Please log in to view this page.'}</Text>
+      </View>
+    );
+  }
+
   const handleUsernamePress = (username) => {
-    router.push(`/userProfile/${username}`);  // Navigate to the profile
+    router.push(`/userProfile/${username}`);
   };
 
+  const renderForYouHeader = () => (
+    <TouchableOpacity
+      style={[styles.header, !isFollowing ? styles.activeHeader : styles.inactiveHeader]}
+      onPress={() => setIsFollowing(false)}
+    >
+      <Text style={styles.headerText}>For You</Text>
+    </TouchableOpacity>
+  );
+
+  const renderFollowingHeader = () => (
+    <TouchableOpacity
+      style={[styles.header, isFollowing ? styles.activeHeader : styles.inactiveHeader]}
+      onPress={() => setIsFollowing(true)}
+    >
+      <Text style={styles.headerText}>Following</Text>
+    </TouchableOpacity>
+  );
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>For You</Text>
-      {songs.length === 0 ? (
-        <Text style={styles.noSongs}>No songs available</Text>
-      ) : (
-        songs.map((song, index) => (
-          <View key={index} style={styles.songCard}>
-            <View style={styles.userInfo}>
-              {song.profilePicture && (
-                <Image source={{ uri: song.profilePicture }} style={styles.profilePicture} />
-              )}
-              <TouchableOpacity onPress={() => handleUsernamePress(song.username)}>
-                <Text style={styles.username}>{song.username}</Text>
-              </TouchableOpacity>
-            </View>
-
-            {song.comment && <Text style={styles.comment}>{song.comment}</Text>}
-
-            <View style={styles.albumArtContainer}>
-              {song.albumArt && (
-                <Image source={{ uri: song.albumArt }} style={styles.albumArt} />
-              )}
-              <View style={styles.songInfo}>
-                <Text style={styles.songTitle}>{song.songName}</Text>
-                <Text style={styles.artistName}>{song.artist}</Text>
-              </View>
-            </View>
-
-            {song.spotifyLink && (
-              <TouchableOpacity onPress={() => Linking.openURL(song.spotifyLink)}>
-                <Text style={styles.spotifyLink}>Listen on Spotify</Text>
-              </TouchableOpacity>
-            )}
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#121212' }}>
+      <PanGestureHandler onGestureEvent={(event) => setIsFollowing(event.nativeEvent.translationX > 100)}>
+        <View style={{ flex: 1 }}>
+          <View style={styles.headerContainer}>
+            {renderFollowingHeader()}
+            {renderForYouHeader()}
           </View>
-        ))
-      )}
-    </ScrollView>
+
+          {isFollowing ? (
+            <PaginatedSongs
+              songs={filteredSongs}
+              handleUsernamePress={handleUsernamePress}
+              currentUser={userUsername}
+              showEditDelete={false}
+            />
+          ) : (
+            <PaginatedSongs
+              songs={allSongs}
+              handleUsernamePress={handleUsernamePress}
+              currentUser={{ username: userUsername }}
+              showEditDelete={false}
+            />
+          )}
+        </View>
+      </PanGestureHandler>
+    </GestureHandlerRootView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 16,
+  },
+  header: {
+    flex: 1,
     padding: 16,
-    backgroundColor: '#121212',  // Dark background color
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    color: '#fff',  // White text for dark theme
-  },
-  noSongs: {
-    fontSize: 18,
-    color: '#ccc',  // Light gray color for empty state text
-    textAlign: 'center',
-  },
-  songCard: {
-    backgroundColor: '#1E1E1E',  // Dark card background
-    borderRadius: 15,
-    padding: 15,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  userInfo: {
-    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
-  },
-  profilePicture: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 10,
-  },
-  username: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',  // White text for username
-  },
-  comment: {
-    fontFamily: 'Chilanka',
-    fontSize: 19,
-    marginBottom: 10,
-    color: '#ddd',  // Light gray color for comment text
-  },
-  albumArtContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  albumArt: {
-    width: 120,
-    height: 120,
-    borderRadius: 8,
-    backgroundColor: '#ddd',
-    marginRight: 15,
-  },
-  songInfo: {
-    flexDirection: 'column',
     justifyContent: 'center',
   },
-  songTitle: {
-    fontSize: 18,
+  headerText: {
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',  // White text for song title
+    color: '#fff',
   },
-  artistName: {
-    fontSize: 16,
-    color: '#bbb',  // Light gray color for artist name
+  activeHeader: {
+    backgroundColor: '#1E1E1E',
   },
-  spotifyLink: {
-    color: '#1DB954',  // Green color for Spotify link
-    textDecorationLine: 'underline',
-    marginTop: 10,
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#121212',
+  },
+  errorText: {
+    fontSize: 18,
+    color: '#ff4444',
   },
 });
 

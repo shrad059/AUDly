@@ -9,15 +9,12 @@ exports.uploadMusic = async (req, res) => {
     const music = {
       title,
       artist,
-      fileUrl: `/uploads/${req.file.filename}`,  // File URL based on filename
-      user: req.user?.userId || 'guest',  // Assuming user info is attached to req.user by auth middleware
+      fileUrl: `/uploads/${req.file.filename}`,  
+      user: req.user?.userId || 'guest',  
     };
 
-    // For now, we are just returning the mocked music object
-    // If you had a database, you would save the music object here instead
     console.log('Uploaded music:', music);
 
-    // Respond with the saved (mocked) music object
     res.status(201).json(music);
   } catch (error) {
     console.error(error);

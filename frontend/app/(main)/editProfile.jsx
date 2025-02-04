@@ -15,6 +15,7 @@ import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import * as FileSystem from 'expo-file-system';
 
 export default function EditProfile() {
   const router = useRouter();
@@ -37,7 +38,7 @@ export default function EditProfile() {
         return;
       }
 
-      const response = await axios.get(`https://audly.onrender.com/api/users/profile/${username}`);
+      const response = await axios.get(`http://localhost:8006/api/users/profile/${username}`);
       setEditForm({
         bio: response.data.bio,
         profilePicture: response.data.profilePicture,
@@ -72,31 +73,96 @@ export default function EditProfile() {
   const handleUpdateProfile = async () => {
     try {
       const username = await AsyncStorage.getItem('username');
-      let profilePictureUrl = editForm.profilePicture;
-
-      // If using an API that requires file uploads, handle it here
-      const response = await axios.put('https://audly.onrender.com/api/users/profile/update', {
-        username,
-        bio: editForm.bio,
-        profilePicture: profilePictureUrl, // Make sure your backend can handle this URL
-        name: editForm.name,
-        email: editForm.email,
-      });
-
+      let formData = new FormData();
+  
+      formData.append('username', username);
+      formData.append('bio', editForm.bio);
+      formData.append('name', editForm.name);
+      formData.append('email', editForm.email);
+  
+      console.log('Profile Picture:', editForm.profilePicture);
+  
+      if (editForm.profilePicture && typeof editForm.profilePicture === 'string' && editForm.profilePicture.startsWith('data:image')) {
+        const blob = await fetch(editForm.profilePicture).then(res => res.blob());
+        formData.append('profilePicture', blob, 'profile.jpg');
+    } else {
+        console.log('No valid profile picture found, skipping upload');
+    }
+    
+  
+      console.log('FormData:', formData);
+  
+      const response = await axios.put(
+        'http://localhost:8006/api/users/profile/update',
+        formData,
+        {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        }
+      );
+  
       Alert.alert('Success', 'Profile updated successfully');
       router.push('/profile');
     } catch (error) {
-      console.error('Error updating profile:', error);
+      console.error('Error updating profile:', error.response?.data || error.message);
       Alert.alert('Error', 'Failed to update profile');
     }
   };
+  
+  
+
+  // const handleUpdateProfile = async () => {
+  //   try {
+  //     const username = await AsyncStorage.getItem('username');
+  //     let formData = new FormData();
+  
+  //     formData.append('username', username);
+  //     formData.append('bio', editForm.bio);
+  //     formData.append('name', editForm.name);
+  //     formData.append('email', editForm.email);
+  
+  //     console.log('Profile Picture:', editForm.profilePicture);
+  
+  //     // Convert Base64 to a file if needed
+  //     if (editForm.profilePicture.startsWith('data:image')) {
+  //       const fileUri = FileSystem.cacheDirectory + 'profile.jpg';
+  
+  //       // Convert Base64 to a file and save it temporarily
+  //       await FileSystem.writeAsStringAsync(fileUri, editForm.profilePicture.split(',')[1], {
+  //         encoding: FileSystem.EncodingType.Base64,
+  //       });
+  
+  //       formData.append('profilePicture', {
+  //         uri: fileUri,
+  //         name: 'profile.jpg',
+  //         type: 'image/jpeg',
+  //       });
+  //     }
+  
+  //     console.log('FormData:', formData);
+  
+  //     const response = await axios.put(
+  //       'http://localhost:8006/api/users/profile/update',
+  //       formData,
+  //       {
+  //         headers: { 'Content-Type': 'multipart/form-data' },
+  //       }
+  //     );
+  
+  //     Alert.alert('Success', 'Profile updated successfully');
+  //     router.push('/profile');
+  //   } catch (error) {
+  //     console.error('Error updating profile:', error.response?.data || error.message);
+  //     Alert.alert('Error', 'Failed to update profile');
+  //   }
+  // };
+  
+  
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.header}>Edit Profile</Text>
 
-        {/* Profile Picture with Click-to-Change Feature */}
         <TouchableOpacity onPress={selectPhoto}>
           <Image 
             source={{ uri: editForm.profilePicture || 'https://via.placeholder.com/100' }} 

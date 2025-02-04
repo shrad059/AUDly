@@ -1,10 +1,7 @@
 import axios from 'axios';
 
-// Environment-based base URL
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL || 'https://audly.onrender.com/', // Use environment variable for base URL
-  // baseURL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:8006/', // Use environment variable for base URL
-
+  baseURL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:8006/', 
   timeout: 10000,
 });
 
@@ -23,8 +20,8 @@ export const registerUser = async (username, email, password) => {
 export const loginUser = async (email, password) => {
     try {
       const response = await api.post('/api/auth/login', { email, password });
-      console.log('Login response in API:', response); // Debugging log
-      return response.data;  // Assuming response contains token or user data
+      console.log('Login response in API:', response); 
+      return response.data;  
     } catch (error) {
       console.error('Error during login:', error);
       throw error;
@@ -45,7 +42,7 @@ export const uploadMusic = async (token, file, title, artist) => {
         'Content-Type': 'multipart/form-data',
       },
     });
-    return response.data;  // Assuming response contains the uploaded music data
+    return response.data;  
   } catch (error) {
     console.error('Error uploading music:', error);
     throw error;

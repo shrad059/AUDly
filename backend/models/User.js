@@ -1,6 +1,5 @@
-// User.js - Updated Schema
 const mongoose = require('mongoose');
-const { Schema } = mongoose; // Destructure Schema from mongoose
+const { Schema } = mongoose; 
 
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
@@ -9,12 +8,12 @@ const UserSchema = new mongoose.Schema({
   bio: { type: String, default: "Hi, I'm a musicss enthusiast!" },
   profilePicture: { 
     type: String, 
-    // default: "https://media.istockphoto.com/id/1353379172/photo/cute-little-african-american-girl-looking-at-camera.jpg?s=1024x1024&w=is&k=20&c=umFtOYrvwG4HIDCAskJ5U-2ncPlSoNXETjog2YbpC10=" 
     default:"https://bellfund.ca/wp-content/uploads/2018/03/demo-user.jpg"
   },
   name: { type: String, default: 'NAme' },
   followers: [{ type: String }], 
   following: [{ type: String }], 
+  likedSongs: [{ type: mongoose.Schema.Types.ObjectId, ref: "Song" }], 
 
 }, {
   timestamps: true

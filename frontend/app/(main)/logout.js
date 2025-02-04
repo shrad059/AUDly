@@ -8,12 +8,10 @@ const Logout = () => {
 
   const handleLogout = async () => {
     try {
-      // Clear the AsyncStorage
       await AsyncStorage.removeItem('userToken');
       await AsyncStorage.removeItem('username');
       Alert.alert('Logged Out', 'You have been successfully logged out.');
       
-      // Navigate to the login page
       router.replace('/login');
     } catch (error) {
       console.error('Logout failed:', error);
@@ -22,7 +20,6 @@ const Logout = () => {
   };
 
   useEffect(() => {
-    // Optional: Automatically log out when the user lands on this page
     handleLogout();
   }, []);
 

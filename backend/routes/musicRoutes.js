@@ -8,7 +8,6 @@ const router = express.Router();
 
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
-console.log(CLIENT_ID)
 let accessToken = null;
 let tokenExpiration = null;
 
@@ -34,6 +33,52 @@ async function getSpotifyToken() {
     return accessToken;
 }
 
+router.get('/getSongLikes/:songId', async (req, res) => {
+  const { songId } = req.params;
+
+  try {
+    const song = await Song.findById(songId);
+    res.status(200).json({ likeCount: song.likes.length });
+  } catch (error) {
+    console.error('Error fetching like count:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.post("/likeSong", async (req, res) => {
+  const { username, songId } = req.body;
+
+  if (!username || !songId) {
+    return res.status(400).json({ error: "Missing username or songId" });
+  }
+
+  try {
+    const user = await User.findOne({ username });
+    const song = await Song.findById(songId);
+
+    if (!user || !song) {
+      return res.status(404).json({ error: "User or Song not found" });
+    }
+
+    const alreadyLiked = user.likedSongs.includes(songId);
+
+    if (alreadyLiked) {
+      await User.updateOne({ username }, { $pull: { likedSongs: songId } });
+      await Song.updateOne({ _id: songId }, { $pull: { likedUsers: username } });
+
+      return res.json({ message: "Song unliked", liked: false });
+    } else {
+      await User.updateOne({ username }, { $addToSet: { likedSongs: songId } });
+      await Song.updateOne({ _id: songId }, { $addToSet: { likedUsers: username } });
+
+      return res.json({ message: "Song liked", liked: true });
+    }
+  } catch (error) {
+    console.error("Error updating like status:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 router.get('/deezer/search', async (req, res) => {
   try {
     const { query } = req.query;
@@ -41,7 +86,6 @@ router.get('/deezer/search', async (req, res) => {
       return res.status(400).json({ error: 'Search query is required' });
     }
 
-    // Search for tracks using Deezer API
     const response = await fetch(`${DEEZER_API_URL}/search?q=${encodeURIComponent(query)}&limit=10`);
     const data = await response.json();
     res.json(data);
@@ -51,14 +95,13 @@ router.get('/deezer/search', async (req, res) => {
   }
 });
 
-// Deezer playlist route (similar to Spotify's playlist fetch)
 router.get('/deezer/playlist/:id', async (req, res) => {
   try {
     const response = await fetch(`${DEEZER_API_URL}/playlist/${req.params.id}`);
     const data = await response.json();
 
     if (data && data.tracks && data.tracks.data) {
-      const topSongs = data.tracks.data.slice(0, 10);  // Get top 10 songs
+      const topSongs = data.tracks.data.slice(0, 10);  
       res.json({ tracks: { items: topSongs } });
     } else {
       res.status(500).json({ error: 'Invalid data structure from Deezer API' });
@@ -69,7 +112,6 @@ router.get('/deezer/playlist/:id', async (req, res) => {
   }
 });
 
-
 router.get('/getSpotifyToken', async (req, res) => {
   try {
       const token = await getSpotifyToken(); 
@@ -78,6 +120,7 @@ router.get('/getSpotifyToken', async (req, res) => {
       res.status(500).json({ message: 'Failed to fetch token' });
   }
 });
+
 router.get('/search', async (req, res) => {
   try {
     const { query } = req.query;
@@ -102,10 +145,10 @@ router.get('/search', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
 router.get('/playlist/:id', async (req, res) => {
   try {
     const token = await getSpotifyToken();
-    console.log("token "+token);
     const response = await fetch(
       `https://api.spotify.com/v1/playlists/${req.params.id}`,
       {
@@ -117,8 +160,7 @@ router.get('/playlist/:id', async (req, res) => {
     const data = await response.json();
 
     if (data && data.tracks && data.tracks.items) {
-      // Ensure tracks.items exists and is not empty
-      const topSongs = data.tracks.items.slice(0, 10);  // Get top 10 songs
+      const topSongs = data.tracks.items.slice(0, 10);  
       res.json({ tracks: { items: topSongs } });
     } else {
       res.status(500).json({ error: 'Invalid data structure from Spotify API' });
@@ -129,51 +171,26 @@ router.get('/playlist/:id', async (req, res) => {
   }
 });
 
-// router.post('/addSong', async (req, res) => {
-//   const { username, songName, artist, albumArt, spotifyLink } = req.body;
-
-//   try {
-//     // Create a new song document for the user
-//     const newSong = new Song({
-//       username,
-//       songName,
-//       artist,
-//       albumArt,
-//       spotifyLink,
-//     });
-
-//     // Save the song to the database
-//     await newSong.save();
-//     res.status(200).json({ message: 'Song added successfully' });
-//   } catch (error) {
-//     console.error('Error adding song:', error);
-//     res.status(500).json({ message: 'Error adding song', error: error.message });
-//   }
-// });
-
 router.post('/addSong', async (req, res) => {
   const { username, songName, artist, albumArt, spotifyLink, comment } = req.body;
 
   try {
-    // Fetch the user's profile picture from the User collection based on the username
-    const user = await User.findOne({ username }); // Assuming you have a User model
+    const user = await User.findOne({ username });
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Create a new song document with user details
     const newSong = new Song({
       username,
-      profilePicture: user.profilePicture, // Retrieve the profile picture from the user document
+      profilePicture: user.profilePicture,
       songName,
       artist,
       albumArt,
       spotifyLink,
-      comment, // Include the comment in the song document
+      comment,
     });
-    console.log("newsong ", newSong);
-    // Save the song to the database
+
     await newSong.save();
     res.status(200).json({ message: 'Song added successfully' });
   } catch (error) {
@@ -182,30 +199,27 @@ router.post('/addSong', async (req, res) => {
   }
 });
 
-
-// Endpoint to fetch songs posted by a user
 router.get('/getSongs', async (req, res) => {
-  const { username } = req.query;  // Assuming you're passing the username as a query parameter
+  const { username } = req.query;
 
   try {
-    // Fetch all songs posted by the user from the database
     const songs = await Song.find({ username });
 
     if (songs.length === 0) {
       return res.status(404).json({ message: 'No songs found for this user' });
     }
 
-    res.status(200).json(songs); // Send the list of songs back to the client
+    res.status(200).json(songs);
   } catch (error) {
     console.error('Error fetching songs1:', error);
     res.status(500).json({ message: 'Error fetching songs2', error: error.message });
   }
 });
-// Get all songs posted by any user
+
 router.get('/getAllSongs', async (req, res) => {
   try {
-    const songs = await Song.find(); // Fetch all songs from the database
-    res.status(200).json(songs); // Return songs as JSON
+    const songs = await Song.find();
+    res.status(200).json(songs);
   } catch (err) {
     console.error('Error fetching songs3:', err);
     res.status(500).json({ message: 'Error fetching songs4' });
@@ -213,7 +227,7 @@ router.get('/getAllSongs', async (req, res) => {
 });
 
 module.exports = router;
-// Simple test endpoint
+
 router.get('/test', (req, res) => {
     res.json({ message: 'Server is working!' });
 });

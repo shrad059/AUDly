@@ -9,7 +9,6 @@ import {
   Alert,
   Linking,
   ActivityIndicator,
-  FlatList,
 } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -39,17 +38,15 @@ export default function UserProfile() {
   }, []);
 
   useEffect(() => {
+    console.log("userUsername edwe   "+ userUsername)
     if (userUsername) {
       const fetchProfile = async () => {
         try {
-          // const response = await axios.get(`http://localhost:8006/api/users/profile/${username}`);
-          const response = await axios.get(`https://audly.onrender.com/api/users/profile/${username}`);
+          const response = await axios.get(`http://localhost:8006/api/users/profile/${username}`);
           setUserProfile(response.data);
           setIsFollowing(response.data.followers.includes(userUsername));
 
-          // const songsResponse = await axios.get(`http://localhost:8006//api/music/getSongs?username=${username}`);
-
-          const songsResponse = await axios.get(`https://audly.onrender.com/api/music/getSongs?username=${username}`);
+          const songsResponse = await axios.get(`http://localhost:8006/api/music/getSongs?username=${username}`);
           setPostedSongs(songsResponse.data);
         } catch (error) {
           Alert.alert('Error', 'Failed to load profile.');
@@ -63,29 +60,37 @@ export default function UserProfile() {
 
   const handleFollowToggle = async () => {
     try {
-      const endpoint = isFollowing
-      
-      // ? `http://localhost:8006/api/users/unfollow/${username}`
-      // : `http://localhost:8006/api/users/follow/${username}`;
-        ? `https://audly.onrender.com/api/users/unfollow/${username}`
-        : `https://audly.onrender.com/api/users/follow/${username}`;
+      const newFollowingState = !isFollowing;
+      setIsFollowing(newFollowingState);
+
+      const endpoint = newFollowingState
+        ? `http://localhost:8006/api/users/follow/${username}`
+        : `http://localhost:8006/api/users/unfollow/${username}`;
+
       const response = await axios.post(endpoint, { currentUsername: userUsername });
       if (response.status === 200) {
-        setIsFollowing(!isFollowing);
         setUserProfile((prev) => ({
           ...prev,
-          followersCount: isFollowing ? prev.followersCount - 1 : prev.followersCount + 1,
+          followersCount: newFollowingState
+            ? prev.followersCount + 1
+            : prev.followersCount - 1,
         }));
       }
     } catch (error) {
+      console.error('Failed to update follow status:', error);
       Alert.alert('Error', 'Failed to update follow status.');
     }
+  };
+
+  const handleMessagePress = () => {
+    console.log('Message button pressed');
+    // Handle message button press (e.g., open chat screen)
   };
 
   if (isLoading) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="green" />
         <Text>Loading...</Text>
       </View>
     );
@@ -124,40 +129,47 @@ export default function UserProfile() {
         <Image source={{ uri: userProfile.profilePicture }} style={styles.profilePicture} />
       </View>
 
-      <TouchableOpacity
-        onPress={handleFollowToggle}
-        style={[styles.followButton, isFollowing && styles.unfollowButton]}
-      >
-        <Text style={styles.followButtonText}>{isFollowing ? 'Unfollow' : 'Follow'}</Text>
-      </TouchableOpacity>
+      <View style={styles.buttonsContainer}>
+        <TouchableOpacity
+          onPress={handleFollowToggle}
+          style={[styles.followButton, isFollowing && styles.unfollowButton]}
+        >
+          <Text style={styles.followButtonText}>{isFollowing ? 'Unfollow' : 'Follow'}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={handleMessagePress} style={styles.messageButton}>
+          <Text style={styles.messageButtonText}>Message</Text>
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.songsContainer}>
-          <Text style={styles.sectionTitle}>Posted Songs</Text>
-          {postedSongs.map((song, index) => (
-            <View key={index} style={styles.songCard}>
-              <View style={styles.userInfo}>
-                <Image source={{ uri: userProfile.profilePicture }} style={styles.profilePictureSmall} />
-                <Text style={styles.songUsername}>{userProfile.username}</Text>
-              </View>
-              {song.comment && <Text style={styles.comment}>{song.comment}</Text>}
-
-              {song.albumArt && (
-                <View style={styles.albumArtContainer}>
-                  <Image source={{ uri: song.albumArt }} style={styles.albumArt} />
-                  <View style={styles.songInfo}>
-                    <Text style={styles.songTitle}>{song.songName}</Text>
-                    <Text style={styles.artistName}>{song.artist}</Text>
-                  </View>
-                </View>
-              )}
-              {song.spotifyLink && (
-                <TouchableOpacity onPress={() => Linking.openURL(song.spotifyLink)}>
-                  <Text style={styles.spotifyLink}>Listen on Spotify</Text>
-                </TouchableOpacity>
-              )}
+        <Text style={styles.sectionTitle}>Posted Songs</Text>
+        {postedSongs.map((song, index) => (
+          <View key={index} style={styles.songCard}>
+            <View style={styles.userInfo}>
+              <Image source={{ uri: userProfile.profilePicture }} style={styles.profilePictureSmall} />
+              <Text style={styles.songUsername}>{userProfile.username}</Text>
             </View>
-          ))}
-        </View>
+            {song.comment && <Text style={styles.comment}>{song.comment}</Text>}
+
+            {song.albumArt && (
+              <View style={styles.albumArtContainer}>
+                <Image source={{ uri: song.albumArt }} style={styles.albumArt} />
+                <View style={styles.songInfo}>
+                  <Text style={styles.songTitle}>{song.songName}</Text>
+                  <Text style={styles.artistName}>{song.artist}</Text>
+                </View>
+              </View>
+            )}
+            {song.spotifyLink && (
+              <TouchableOpacity onPress={() => Linking.openURL(song.spotifyLink)} style={styles.spotifyLinkContainer}>
+                <MaterialIcons name="play-circle-filled" size={30} color="#fff" style={styles.spotifyIcon}/>
+                <Text style={styles.spotifyLink}>Listen on Spotify</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        ))}
+      </View>
     </ScrollView>
   );
 }
@@ -219,12 +231,30 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   unfollowButton: {
-    backgroundColor: '#B00020',
+    backgroundColor: 'gray',
   },
   followButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  messageButton: {
+    backgroundColor: '#4C90A8',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    alignItems: 'center',
+    marginBottom: 16,
+    marginLeft: 10,
+  },
+  messageButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  buttonsContainer: {
+    flexDirection: 'row',
+    marginBottom: 16,
   },
   songsContainer: {
     marginTop: 16,
@@ -261,38 +291,39 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   songTitle: {
-    fontSize: 20,
+    color: '#fff',
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#fff', // White text for song title
   },
   artistName: {
-    fontSize: 16,
-    color: '#bbb', // Lighter color for artist name
+    color: '#bbb',
+    fontSize: 14,
   },
   userInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   profilePictureSmall: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 10,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    marginRight: 8,
   },
   songUsername: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff', // White text for song username
-  },
-  comment: {
+    color: '#fff',
     fontSize: 14,
-    color: '#bbb', // Lighter color for comments
-    marginBottom: 10,
+  },
+  spotifyLinkContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  spotifyIcon: {
+    marginRight: 10,
   },
   spotifyLink: {
-    color: '#1DB954', // Spotify link color
-    textDecorationLine: 'underline',
-    marginTop: 10,
+    color: '#1DB954',
+    fontSize: 16,
   },
 });

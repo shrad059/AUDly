@@ -1,14 +1,17 @@
 {
   "expo": {
     "name": "groovy",
-    "slug": "groovy",
+    "slug": "audly",
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.hungama.groovy"
+      "bundleIdentifier": "com.hungama.groovy",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "permissions": [
@@ -35,7 +38,7 @@
         "origin": false
       },
       "eas": {
-        "projectId": "14c92c4f-a347-4e27-ad28-24d0889a53bd"
+        "projectId": "35314816-d1db-4b99-b376-3743c6e319e9"
       }
     },
     "runtimeVersion": "1.0.0",

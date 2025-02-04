@@ -12,7 +12,7 @@ const Followers = ({ route }) => {
         
         // const response = await axios.get(`http://localhost:8006/api/users/followers/${username}`);
 
-        const response = await axios.get(`https://audly.onrender.com/api/users/followers/${username}`);
+        const response = await axios.get(`http://localhost:8006/api/users/followers/${username}`);
         setFollowers(response.data);
       } catch (error) {
         console.error('Error fetching followers:', error);

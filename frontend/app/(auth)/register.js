@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Text, TextInput, Button, View, StyleSheet, Alert } from 'react-native';
+import { Text, TextInput, TouchableOpacity, View, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { registerUser } from '../services/api.js';
 
@@ -22,7 +22,7 @@ const Register = () => {
         "Password must be at least 8 characters long, contain one uppercase letter, one lowercase letter, one number, and one special character."
       );
       return;
-    }  
+    }
 
     try {
       await registerUser(username, email, password); 
@@ -60,9 +60,13 @@ const Register = () => {
         secureTextEntry
       />
 
-      <Button title="Register" onPress={handleRegister} />
+      <TouchableOpacity style={styles.button} onPress={handleRegister}>
+        <Text style={styles.buttonText}>Register</Text>
+      </TouchableOpacity>
 
-      <Button title="Already have an account? Login" onPress={() => router.push('/login')} />
+      <TouchableOpacity style={styles.linkButton} onPress={() => router.push('/login')}>
+        <Text style={styles.linkText}>Already have an account? Login</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -75,18 +79,46 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
+    backgroundColor: '#ebeccf',
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 20,
+    color: '#386f4d',
   },
   input: {
     width: '100%',
-    padding: 10,
-    marginBottom: 10,
+    padding: 15,
+    marginBottom: 15,
+    backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 5,
+    borderRadius: 10,
+    fontSize: 16,
+    color: '#333',
+  },
+  button: {
+    backgroundColor: '#386f4d', 
+    paddingVertical: 15,
+    width: '100%',
+    borderRadius: 25,
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  buttonText: {
+    fontSize: 18,
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  linkButton: {
+    paddingVertical: 15,
+    width: '100%',
+    alignItems: 'center',
+  },
+  linkText: {
+    fontSize: 16,
+    color: '#007bff',
+    textDecorationLine: 'underline',
   },
 });

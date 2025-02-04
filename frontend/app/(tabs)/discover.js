@@ -1,101 +1,53 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, Image, ActivityIndicator, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
-import { useRouter } from 'expo-router'; // Import router from expo-router
-import AntDesign from '@expo/vector-icons/AntDesign';
 
-const API_URL = 'https://audly.onrender.com/api/music'; 
+import React, { useState } from 'react';
+import { View, TextInput, Text, Button, StyleSheet, Alert, ScrollView, Image, TouchableOpacity } from 'react-native';
+import axios from 'axios';
+import { useRouter } from 'expo-router';
+import AntDesign from '@expo/vector-icons/AntDesign'; 
 
-const SpotifyTopSongs = () => {
-  const [songs, setSongs] = useState([]);
-  const [filteredSongs, setFilteredSongs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [error, setError] = useState(null); // Error state for handling fetch issues
-  const router = useRouter(); // Initialize router
-
-  // Fetch top songs
-  const fetchSongs = async () => {
-    setLoading(true);
-    setError(null); // Reset error state on each fetch attempt
-  
-    try {
-      const response = await fetch(`${API_URL}/playlist/6Hdnc4U8mZhZ3Vvq65rWsB`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch playlist');
-      }
-  
-      const data = await response.json();
-      const songsData = data.tracks.items.slice(0, 10); // Get top 10 songs
-      setSongs(songsData); // Save all fetched songs to `songs` state
-      setFilteredSongs(songsData); // Set the filtered songs initially to all songs
-    } catch (err) {
-      console.error('Error fetching songs:', err);
-      setError('Failed to fetch songs, please try again.'); // Set error state in case of fetch failure
-    } finally {
-      setLoading(false); // Stop loading state once the fetch is done
-    }
-  };
-
-  // Search songs
-  const searchSpotify = async (query) => {
-    if (!query.trim()) {
-      setFilteredSongs(songs); // Restore full list if the query is empty
+const Search = () => {
+  const router = useRouter();
+  const [username, setUsername] = useState('');
+  const [searchedUser, setSearchedUser] = useState(null);
+  const [searchedMusic, setSearchedMusic] = useState([]);
+  const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState('users'); 
+  const search = async () => {
+    if (!username.trim()) {
+      Alert.alert('Error', 'Please enter a search term');
       return;
     }
 
-    setLoading(true);
+    setSearchedUser(null); 
+    setSearchedMusic([]);  
+
     try {
-      const response = await fetch(`${API_URL}/search?query=${encodeURIComponent(query)}`);
-      if (!response.ok) {
-        throw new Error('Search failed');
+      try {
+        const userResponse = await axios.get(`http://localhost:8006/api/users/profile/${username}`);
+        setSearchedUser(userResponse.data);
+      } catch (err) {
+        console.log('User not found, continuing search for music...');
       }
 
-      const data = await response.json();
-      const searchResults = data.tracks.items.map(track => ({
-        track: {
-          ...track,
-          album: track.album,
-          external_urls: track.external_urls,
-          id: track.id,
-          name: track.name,
-          artists: track.artists,
-        }
-      }));
-  
-      setFilteredSongs(searchResults); // Update filtered list based on search results
+      const musicResponse = await axios.get(`http://localhost:8006/api/music/search?query=${encodeURIComponent(username)}`);
+      setSearchedMusic(musicResponse.data.tracks.items); 
+
+      setError('');
     } catch (err) {
-      console.error('Error searching songs:', err);
-      setError('Search failed, please try again.'); // Set error state in case of failure
-    } finally {
-      setLoading(false); // Stop loading state once search is done
+      console.error('Error fetching data:', err);
+      setError('No results found. Please check the username or music query and try again.');
     }
   };
 
-  // Debounced search input
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      searchSpotify(searchQuery);
-    }, 500); // Add delay to avoid frequent requests
-
-    return () => clearTimeout(timeoutId); // Cleanup timeout on query change
-  }, [searchQuery]);
-
-  // Fetch songs on component mount
-  useEffect(() => {
-    fetchSongs();
-  }, []); // Empty dependency ensures it runs only once on mount
-
-  // Handle song add button click
   const handleAddButtonClick = (song) => {
     const songData = {
-      name: song.track.name,
-      artist: song.track.artists.map(artist => artist.name).join(', '),
-      albumArt: song.track.album.images[0]?.url, // Ensure there's an image URL
-      spotifyLink: song.track.external_urls.spotify
+      name: song.name,
+      artist: song.artists.map(artist => artist.name).join(', '),
+      albumArt: song.album.images[0]?.url,
+      spotifyLink: song.external_urls.spotify
     };
-    console.log("Passing song to PostMusic:", JSON.stringify(songData));
+    console.log("Adding song:", songData);
 
-    // Navigate to PostMusic page and pass the song data
     router.push({
       pathname: "/postMusic",
       params: {
@@ -108,84 +60,212 @@ const SpotifyTopSongs = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <TextInput
-        style={styles.searchInput}
-        placeholder="Search Spotify songs..."
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-      />
-
-      {loading ? (
-        <ActivityIndicator size="large" color="#1DB954" />
-      ) : error ? (
-        <Text style={styles.errorText}>{error}</Text>
-      ) : filteredSongs.length === 0 ? (
-        <Text style={styles.noResultsText}>No results found</Text>
-      ) : (
-        <ScrollView contentContainerStyle={styles.scrollView}>
-          {filteredSongs.map((item, index) => (
-            <View key={item.track.id} style={styles.card}>
-  <TouchableOpacity
-    style={styles.songContainer}
-    onPress={() => handleAddButtonClick(item)}
-  >
-    <View style={styles.albumArtContainer}>
-      <Image
-        source={{ uri: item.track.album.images[0].url }}
-        style={styles.albumArt}
-      />
-      <View style={styles.songInfo}>
-        <Text style={styles.songTitle} numberOfLines={1}>
-          {index + 1}. {item.track.name.length > 20 ? `${item.track.name.substring(0, 20)}...` : item.track.name}
-        </Text>
-        <Text style={styles.artistName} numberOfLines={1}>
-          {item.track.artists.map(artist => artist.name).join(', ').length > 20 
-            ? `${item.track.artists.map(artist => artist.name).join(', ').substring(0, 20)}...` 
-            : item.track.artists.map(artist => artist.name).join(', ')
-          }
-        </Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>Discover</Text>
+      
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Enter username or song name"
+          placeholderTextColor="#bbb"
+          value={username}
+          onChangeText={setUsername}
+        />
+        <TouchableOpacity style={styles.searchButton} onPress={search}>
+          <Text style={styles.searchButtonText}>Search</Text>
+        </TouchableOpacity>
       </View>
-    </View>
-  </TouchableOpacity>
+      
+      {error && <Text style={styles.errorText}>{error}</Text>}
+      
+      <View style={styles.tabsContainer}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'users' && styles.activeTab]}
+          onPress={() => setActiveTab('users')}
+        >
+          <Text style={styles.tabText}>Users</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'music' && styles.activeTab]}
+          onPress={() => setActiveTab('music')}
+        >
+          <Text style={styles.tabText}>Music</Text>
+        </TouchableOpacity>
+      </View>
 
-  <TouchableOpacity
-    style={styles.addButton}
-    onPress={() => handleAddButtonClick(item)}
-  >
-    <Text>
-      <AntDesign name="right" size={24} color="black" />
-    </Text>
-  </TouchableOpacity>
-</View>
-
-          ))}
-        </ScrollView>
+      {activeTab === 'users' && (
+        <>
+          {searchedUser ? (
+            <View style={styles.userCard}>
+              <View style={styles.userInfo}>
+                <Image source={{ uri: searchedUser.profilePicture }} style={styles.profilePicture} />
+                <View style={styles.textContainer}>
+                  <Text style={styles.name}>{searchedUser.name}</Text>
+                  <Text style={styles.username}>@{searchedUser.username}</Text>
+                </View>
+              </View>
+              <TouchableOpacity 
+                style={styles.navigateButton} 
+                onPress={() => router.push(`/userProfile/${searchedUser.username}`)}
+              >
+                <Text style={styles.navigateText}>＞</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <Text style={styles.noResultsText}>No user found</Text>
+          )}
+        </>
       )}
-    </View>
+
+      {activeTab === 'music' && (
+        <>
+          {searchedMusic.length > 0 ? (
+            <ScrollView contentContainerStyle={styles.scrollView}>
+              {searchedMusic.map((item, index) => (
+                <View key={item.id} style={styles.card}>
+                  <TouchableOpacity
+                    style={styles.songContainer}
+                    onPress={() => router.push(`/musicDetails/${item.id}`)} 
+                  >
+                    <View style={styles.albumArtContainer}>
+                      <Image
+                        source={{ uri: item.album?.images[0]?.url }}
+                        style={styles.albumArt}
+                      />
+                      <View style={styles.songInfo}>
+                        <Text style={styles.songTitle} numberOfLines={1}>
+                          {index + 1}. {item.name.length > 20 ? `${item.name.substring(0, 20)}...` : item.name}
+                        </Text>
+                        <Text style={styles.artistName} numberOfLines={1}>
+                          {item.artists?.map(artist => artist.name).join(', ').length > 20 
+                            ? `${item.artists?.map(artist => artist.name).join(', ').substring(0, 20)}...` 
+                            : item.artists?.map(artist => artist.name).join(', ')
+                          }
+                        </Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.addButton}
+                    onPress={() => handleAddButtonClick(item)}
+                  >
+                    <AntDesign name="right" size={24} color="black" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
+          ) : (
+            <Text style={styles.noResultsText}>No music results found</Text>
+          )}
+        </>
+      )}
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
+    padding: 16,
     backgroundColor: '#121212',
-    paddingHorizontal: 16,
-    paddingTop: 20,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+    color: '#fff',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   searchInput: {
-    height: 45,
-    borderColor: '#1DB954',
+    height: 40,
+    flex: 1,
+    borderColor: '#444',
     borderWidth: 1,
-    borderRadius: 30,
-    padding: 5,
-    marginBottom: 20,
-    backgroundColor: '#333',
+    borderRadius: 5,
+    paddingLeft: 10,
     color: '#fff',
-    fontSize: 16,
   },
-  scrollView: {
-    paddingBottom: 20,
+  searchButton: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    marginLeft: 10,
+  },
+  searchButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  tabsContainer: {
+    flexDirection: 'row',
+    marginBottom: 20,
+    justifyContent: 'space-between',
+  },
+  tab: {
+    flex: 1,
+    padding: 10,
+    alignItems: 'center',
+    backgroundColor: '#333',
+    borderRadius: 5,
+  },
+  activeTab: {
+    backgroundColor: '#4CAF50',
+  },
+  tabText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  userCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1E1E1E',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+    justifyContent: 'space-between',
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  profilePicture: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 15,
+  },
+  textContainer: {
+    justifyContent: 'center',
+  },
+  name: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  username: {
+    fontSize: 14,
+    color: '#bbb',
+  },
+  navigateButton: {
+    padding: 10,
+    backgroundColor: '#4CAF50',
+    borderRadius: 5,
+  },
+  navigateText: {
+    color: 'white',
+    fontSize: 20,
   },
   card: {
     backgroundColor: '#1E1E1E',
@@ -208,7 +288,7 @@ const styles = StyleSheet.create({
     marginRight: 15,
   },
   songInfo: {
-    flexDirection: 'column',  // Align song name and artist vertically
+    flexDirection: 'column',
     justifyContent: 'center',
   },
   songTitle: {
@@ -222,8 +302,8 @@ const styles = StyleSheet.create({
     color: '#ccc',
   },
   albumArtContainer: {
-    flexDirection: 'row',    // Aligns the image and text side by side
-    alignItems: 'center',    // Vertically aligns the text and image
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   addButton: {
     backgroundColor: '#1DB954',
@@ -232,16 +312,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  errorText: {
-    color: 'red',
-    textAlign: 'center',
-    marginTop: 20,
-  },
   noResultsText: {
     color: '#fff',
     textAlign: 'center',
     marginTop: 20,
   },
+  errorText: {
+    color: '#ff4d4d',
+    textAlign: 'center',
+    marginVertical: 10,
+  },
 });
 
-export default SpotifyTopSongs;
+export default Search;
